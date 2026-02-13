@@ -36,6 +36,9 @@ class GraphBase(ActionBase):
         self.percentages_1: list[float] = []  # First line data
         self.percentages_2: list[float] = []  # Second line data (optional)
         self.single_line_mode = False  # Set to True in subclasses for single-line graphs
+        
+        # Store plugin directory path for accessing assets
+        self.plugin_dir = self.plugin_base.PATH
 
         self.task_queue = Queue()
         self.result_queue = Queue()
@@ -67,12 +70,9 @@ class GraphBase(ActionBase):
         settings = self.get_settings()
         time_period = settings.get("time-period", 15)
         self.set_percentages_length(time_period)
-
-        # Get plugin directory for assets
-        plugin_dir = os.path.dirname(os.path.abspath(__file__))
         
         # Pass settings, data, single_line_mode, and plugin_dir
-        self.task_queue.put((settings, self.percentages_1, self.percentages_2, self.single_line_mode, plugin_dir))
+        self.task_queue.put((settings, self.percentages_1, self.percentages_2, self.single_line_mode, self.plugin_dir))
 
         img = self.result_queue.get()
         return img
@@ -140,12 +140,22 @@ class GraphBase(ActionBase):
         self.time_period_row.connect("changed", self.on_time_period_change)
         self.dynamic_scaling_row.connect("notify::active", self.on_dynamic_scaling_change)
 
-        return [
-            self.line1_color_row, self.fill1_color_row,
-            self.line2_color_row, self.fill2_color_row,
-            self.line_width_row, self.time_period_row,
-            self.dynamic_scaling_row
-        ]
+        # Return config rows based on single_line_mode
+        if self.single_line_mode:
+            # Single-line graph: only show line1 color options
+            return [
+                self.line1_color_row, self.fill1_color_row,
+                self.line_width_row, self.time_period_row,
+                self.dynamic_scaling_row
+            ]
+        else:
+            # Dual-line graph: show both line1 and line2 color options
+            return [
+                self.line1_color_row, self.fill1_color_row,
+                self.line2_color_row, self.fill2_color_row,
+                self.line_width_row, self.time_period_row,
+                self.dynamic_scaling_row
+            ]
 
     def prepare_color(self, color_values: list[int]) -> Gdk.RGBA:
         if len(color_values) == 3:

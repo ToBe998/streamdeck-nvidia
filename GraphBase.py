@@ -357,10 +357,19 @@ class GraphCreator(Process):
                 target_size = int(graph_img.width * 0.6)
                 logo = logo.resize((target_size, target_size), Image.Resampling.LANCZOS)
                 
-                # Make logo transparent for watermark effect
-                alpha = logo.split()[3]
-                alpha = ImageEnhance.Brightness(alpha).enhance(0.50)  # 50% opacity - visible watermark
-                logo.putalpha(alpha)
+                # Brighten and make logo transparent while preserving its shape
+                opacity = 0.40  # 40% opacity
+                brightness_boost = 2.5  # Brighten the logo colors
+                
+                if logo.mode == 'RGBA':
+                    r, g, b, a = logo.split()
+                    # Brighten RGB channels
+                    r = r.point(lambda x: min(255, int(x * brightness_boost)))
+                    g = g.point(lambda x: min(255, int(x * brightness_boost)))
+                    b = b.point(lambda x: min(255, int(x * brightness_boost)))
+                    # Multiply alpha channel by opacity factor
+                    a = a.point(lambda x: int(x * opacity))
+                    logo = Image.merge('RGBA', (r, g, b, a))
                 
                 # Create overlay layer for the logo
                 overlay = Image.new("RGBA", graph_img.size, (0, 0, 0, 0))

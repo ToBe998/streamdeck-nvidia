@@ -1,0 +1,9 @@
+# NVIDIA GPU monitoring
+nvidia-ml-py3
+
+# Graph generation
+matplotlib
+Pillow
+
+# Logging
+loguru

@@ -1,0 +1,24 @@
+{
+    "id": "com_streamcontroller_NVIDIAPlugin",
+    "name": "NVIDIA GPU Monitor",
+    "version": "1.0.0",
+    "description": "Monitor NVIDIA GPU metrics including usage, VRAM, and temperature",
+    "author": "StreamController Community",
+    "license": "GPL-3.0",
+    "actions": [
+        {
+            "id": "NVIDIAMetrics",
+            "name": "NVIDIA GPU Metrics",
+            "description": "Display configurable GPU metrics as text labels"
+        },
+        {
+            "id": "NVIDIACombinedGraph",
+            "name": "NVIDIA GPU + VRAM Graph",
+            "description": "Display GPU and VRAM usage as a dual-line graph"
+        }
+    ],
+    "requirements": {
+        "python": ">=3.8",
+        "streamcontroller": ">=1.0.0"
+    }
+}

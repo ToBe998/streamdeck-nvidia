@@ -294,6 +294,8 @@ class GraphCreator(Process):
         # Plot the data with a transparent background
         ax = plt.Axes(fig, [0., 0., 1., 1.])
         ax.set_axis_off()
+        ax.patch.set_alpha(0)  # Make axes background transparent
+        ax.patch.set_facecolor('none')
         fig.add_axes(ax)
 
         # Plot first line (or only line in single-line mode)
@@ -340,6 +342,10 @@ class GraphCreator(Process):
 
         plt.close()  # Close the plot to free resources
 
+        # Ensure graph is in RGBA mode
+        if graph_img.mode != "RGBA":
+            graph_img = graph_img.convert("RGBA")
+
         # Add NVIDIA logo background
         try:
             logo_path = os.path.join(plugin_dir, "nvidia_logo.png")
@@ -351,12 +357,12 @@ class GraphCreator(Process):
                 target_size = int(graph_img.width * 0.6)
                 logo = logo.resize((target_size, target_size), Image.Resampling.LANCZOS)
                 
-                # Make logo very transparent (muted)
+                # Make logo transparent but visible (muted)
                 alpha = logo.split()[3]
-                alpha = ImageEnhance.Brightness(alpha).enhance(0.15)  # 15% opacity
+                alpha = ImageEnhance.Brightness(alpha).enhance(0.30)  # 30% opacity - subtle but visible
                 logo.putalpha(alpha)
                 
-                # Create composite image
+                # Create composite image with logo behind the graph
                 background = Image.new("RGBA", graph_img.size, (0, 0, 0, 0))
                 
                 # Center the logo

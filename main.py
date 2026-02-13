@@ -19,6 +19,7 @@ sys.path.append(os.path.dirname(__file__))
 from .NVIDIACombinedGraph import NVIDIACombinedGraph
 from .NVIDIAGPUGraph import NVIDIAGPUGraph
 from .NVIDIAVRAMGraph import NVIDIAVRAMGraph
+from .NVIDIALogo import NVIDIALogo
 from .actions.NVIDIAMetrics.NVIDIAMetrics import NVIDIAMetrics
 
 
@@ -81,6 +82,20 @@ class NVIDIAPlugin(PluginBase):
             }
         )
         self.add_action_holder(self.nvidia_combined_graph_holder)
+        
+        # Logo-only button (no graph, just NVIDIA branding)
+        self.nvidia_logo_holder = ActionHolder(
+            plugin_base=self,
+            action_base=NVIDIALogo,
+            action_id_suffix="NVIDIALogo",
+            action_name="NVIDIA Logo",
+            action_support={
+                Input.Key: ActionInputSupport.SUPPORTED,
+                Input.Dial: ActionInputSupport.SUPPORTED,
+                Input.Touchscreen: ActionInputSupport.UNSUPPORTED
+            }
+        )
+        self.add_action_holder(self.nvidia_logo_holder)
         
         # Register plugin
         self.register(

@@ -369,8 +369,8 @@ class GraphCreator(Process):
                         r = r.point(lambda x: min(255, int(x * brightness)))
                         g = g.point(lambda x: min(255, int(x * brightness)))
                         b = b.point(lambda x: min(255, int(x * brightness)))
-                        # Apply 40% opacity for watermark effect
-                        a = a.point(lambda x: int(x * 0.4))
+                        # Apply opacity for watermark effect
+                        a = a.point(lambda x: int(x * 0.35))  # 35% opacity
                         logo = Image.merge('RGBA', (r, g, b, a))
                     
                     # Cache the processed logo
@@ -380,12 +380,17 @@ class GraphCreator(Process):
                     # Use cached logo
                     logo = self.logo_cache
                 
-                # Center the logo on the graph
+                # Build final image: black background + logo + graph on top
+                # 1. Start with solid black background
+                final = Image.new("RGBA", graph_img.size, (0, 0, 0, 255))
+                
+                # 2. Paste logo centered onto black background
                 logo_x = (graph_img.width - logo.width) // 2
                 logo_y = (graph_img.height - logo.height) // 2
+                final.paste(logo, (logo_x, logo_y), logo)
                 
-                # Composite logo over graph
-                graph_img.paste(logo, (logo_x, logo_y), logo)
+                # 3. Composite graph on top - graph's opaque areas cover the logo
+                graph_img = Image.alpha_composite(final, graph_img)
         except Exception:
             # If logo fails, continue without it
             pass

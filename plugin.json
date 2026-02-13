@@ -25,6 +25,11 @@
             "id": "NVIDIACombinedGraph",
             "name": "NVIDIA GPU + VRAM Graph",
             "description": "Display GPU and VRAM usage as a dual-line graph with NVIDIA logo"
+        },
+        {
+            "id": "NVIDIALogo",
+            "name": "NVIDIA Logo",
+            "description": "Display the NVIDIA logo on a black background (no graph)"
         }
     ],
     "requirements": {

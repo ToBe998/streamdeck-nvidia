@@ -1,14 +1,7 @@
-from src.backend.PluginManager.ActionBase import ActionBase
 from src.backend.PluginManager.PluginBase import PluginBase
 from src.backend.PluginManager.ActionHolder import ActionHolder
 from src.backend.DeckManagement.InputIdentifier import Input
 from src.backend.PluginManager.ActionInputSupport import ActionInputSupport
-
-# Import gtk modules
-import gi
-gi.require_version("Gtk", "4.0")
-gi.require_version("Adw", "1")
-from gi.repository import Gtk, Adw
 
 import sys
 import os
@@ -100,7 +93,7 @@ class NVIDIAPlugin(PluginBase):
         # Register plugin
         self.register(
             plugin_name="NVIDIA GPU Monitor",
-            github_repo="https://github.com/StreamController/NVIDIAPlugin",
+            github_repo="https://github.com/streamdeck-nvidia/streamdeck-nvidia",
             plugin_version="1.0.0",
-            app_version="1.0.0-alpha"
+            app_version="1.0.0"
         )

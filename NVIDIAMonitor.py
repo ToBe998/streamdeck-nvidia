@@ -97,7 +97,7 @@ class NVIDIAMonitor:
         if self.initialized and self.pynvml:
             try:
                 self.pynvml.nvmlShutdown()
-            except:
+            except Exception:
                 pass
 
 

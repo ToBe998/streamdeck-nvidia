@@ -1,15 +1,10 @@
 """
-NVIDIA GPU + VRAM Combined Graph Action
-Displays GPU usage and VRAM usage as two lines on the same graph
+NVIDIA GPU + VRAM Combined Graph Action.
+Displays GPU usage and VRAM usage as two lines on the same graph.
 """
 
 from plugins.com_streamcontroller_NVIDIAPlugin.GraphBase import GraphBase
 from plugins.com_streamcontroller_NVIDIAPlugin.NVIDIAMonitor import get_nvidia_monitor
-from src.backend.DeckManagement.DeckController import DeckController
-from src.backend.PageManagement.Page import Page
-from src.backend.PluginManager.PluginBase import PluginBase
-
-from PIL import Image
 
 
 class NVIDIACombinedGraph(GraphBase):

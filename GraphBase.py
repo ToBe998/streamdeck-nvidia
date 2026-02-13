@@ -1,20 +1,17 @@
 """
-Base class for graph actions with support for dual-line graphs
+Base class for graph actions with support for single and dual-line graphs.
+Handles graph rendering in a separate process for non-blocking updates.
 """
 
-from threading import Thread
 from src.backend.PluginManager.ActionBase import ActionBase
-from src.backend.DeckManagement.DeckController import DeckController
-from src.backend.PageManagement.Page import Page
-from src.backend.PluginManager.PluginBase import PluginBase
 
 import matplotlib.pyplot as plt
 import matplotlib
 from multiprocessing import Process, Queue
-# Use different backend to prevent errors with running plt in different threads
+# Use non-interactive backend to prevent errors with multiprocessing
 matplotlib.use('agg')
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-from PIL import Image, ImageEnhance
+from PIL import Image
 import io
 import os
 
@@ -27,6 +24,9 @@ from gi.repository import Gtk, Adw, Gdk
 # Import globals
 import globals as gl
 from src.Signals import Signals
+
+# Maximum number of data points to retain
+MAX_DATA_POINTS = 120
 
 
 class GraphBase(ActionBase):
@@ -51,20 +51,20 @@ class GraphBase(ActionBase):
         self.task_queue.put((None, None, None, None, None))
 
     def set_percentages_length(self, length: int):
-        """Ensure data lists have the correct length"""
+        """Ensure data lists have the correct length, capped at MAX_DATA_POINTS"""
+        length = min(length, MAX_DATA_POINTS)
+
         # First line
         if len(self.percentages_1) > length:
             self.percentages_1 = self.percentages_1[-length:]
         elif len(self.percentages_1) < length:
-            for _ in range(length - len(self.percentages_1)):
-                self.percentages_1.insert(0, 0)
+            self.percentages_1 = [0] * (length - len(self.percentages_1)) + self.percentages_1
         
         # Second line
         if len(self.percentages_2) > length:
             self.percentages_2 = self.percentages_2[-length:]
         elif len(self.percentages_2) < length:
-            for _ in range(length - len(self.percentages_2)):
-                self.percentages_2.insert(0, 0)
+            self.percentages_2 = [0] * (length - len(self.percentages_2)) + self.percentages_2
 
     def get_graph(self) -> Image:
         settings = self.get_settings()
@@ -214,7 +214,7 @@ class GraphBase(ActionBase):
 
     def on_line_width_change(self, spin):
         settings = self.get_settings()
-        settings["line-width"] = spin.get_value()
+        settings["line-width"] = int(spin.get_value())
         self.set_settings(settings)
         self.show_graph()
 
@@ -270,7 +270,11 @@ class GraphCreator(Process):
             if None in data:
                 break
             settings, percentages_1, percentages_2, single_line_mode, plugin_dir = data
-            result = self.generate_graph(settings, percentages_1, percentages_2, single_line_mode, plugin_dir)
+            try:
+                result = self.generate_graph(settings, percentages_1, percentages_2, single_line_mode, plugin_dir)
+            except Exception:
+                # Return None on error to avoid deadlocking the result queue
+                result = None
             self.result_queue.put(result)
 
     def generate_graph(self, settings: dict, percentages_1: list[float], percentages_2: list[float], 

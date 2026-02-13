@@ -1,14 +1,11 @@
 """
-NVIDIA Logo Action
-Displays the NVIDIA logo on a black background with no graph data
+NVIDIA Logo Action.
+Displays the NVIDIA logo on a black background with no graph data.
 """
 
 from src.backend.PluginManager.ActionBase import ActionBase
-from src.backend.DeckManagement.DeckController import DeckController
-from src.backend.PageManagement.Page import Page
-from src.backend.PluginManager.PluginBase import PluginBase
 
-from PIL import Image, ImageEnhance
+from PIL import Image
 import os
 
 

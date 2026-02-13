@@ -25,9 +25,18 @@ if [ -d "$TARGET_DIR" ]; then
     rm -rf "$TARGET_DIR"
 fi
 
-# Copy new version
+# Copy new version (exclude dev files)
 echo "📋 Copying plugin files..."
-cp -r "$SOURCE_DIR" "$TARGET_DIR"
+mkdir -p "$TARGET_DIR"
+mkdir -p "$TARGET_DIR/actions/NVIDIAMetrics"
+
+# Copy only plugin source files
+for f in main.py GraphBase.py NVIDIAMonitor.py NVIDIACombinedGraph.py NVIDIAGPUGraph.py NVIDIAVRAMGraph.py NVIDIALogo.py pynvml.py libnvidia-ml.so.1 nvidia_logo.png plugin.json requirements.txt __init__.py; do
+    [ -f "$SOURCE_DIR/$f" ] && cp "$SOURCE_DIR/$f" "$TARGET_DIR/$f"
+done
+cp "$SOURCE_DIR/actions/__init__.py" "$TARGET_DIR/actions/" 2>/dev/null || true
+cp "$SOURCE_DIR/actions/NVIDIAMetrics/__init__.py" "$TARGET_DIR/actions/NVIDIAMetrics/" 2>/dev/null || true
+cp "$SOURCE_DIR/actions/NVIDIAMetrics/NVIDIAMetrics.py" "$TARGET_DIR/actions/NVIDIAMetrics/"
 
 echo "✅ Plugin files copied successfully"
 echo ""

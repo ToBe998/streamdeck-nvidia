@@ -1,12 +1,9 @@
 """
-NVIDIA GPU Metrics Text Action
-Displays configurable GPU metrics in top/center/bottom labels
+NVIDIA GPU Metrics Text Action.
+Displays configurable GPU metrics in top/center/bottom labels.
 """
 
-from src.backend.DeckManagement.DeckController import DeckController
-from src.backend.PageManagement.Page import Page
 from src.backend.PluginManager.ActionBase import ActionBase
-from src.backend.PluginManager.PluginBase import PluginBase
 
 # Import gtk modules
 import gi

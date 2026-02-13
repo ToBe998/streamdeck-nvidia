@@ -17,6 +17,8 @@ import os
 sys.path.append(os.path.dirname(__file__))
 
 from .NVIDIACombinedGraph import NVIDIACombinedGraph
+from .NVIDIAGPUGraph import NVIDIAGPUGraph
+from .NVIDIAVRAMGraph import NVIDIAVRAMGraph
 from .actions.NVIDIAMetrics.NVIDIAMetrics import NVIDIAMetrics
 
 
@@ -37,6 +39,34 @@ class NVIDIAPlugin(PluginBase):
             }
         )
         self.add_action_holder(self.nvidia_metrics_holder)
+        
+        # GPU-only graph
+        self.nvidia_gpu_graph_holder = ActionHolder(
+            plugin_base=self,
+            action_base=NVIDIAGPUGraph,
+            action_id_suffix="NVIDIAGPUGraph",
+            action_name="NVIDIA GPU Usage Graph",
+            action_support={
+                Input.Key: ActionInputSupport.SUPPORTED,
+                Input.Dial: ActionInputSupport.SUPPORTED,
+                Input.Touchscreen: ActionInputSupport.UNSUPPORTED
+            }
+        )
+        self.add_action_holder(self.nvidia_gpu_graph_holder)
+        
+        # VRAM-only graph
+        self.nvidia_vram_graph_holder = ActionHolder(
+            plugin_base=self,
+            action_base=NVIDIAVRAMGraph,
+            action_id_suffix="NVIDIAVRAMGraph",
+            action_name="NVIDIA VRAM Usage Graph",
+            action_support={
+                Input.Key: ActionInputSupport.SUPPORTED,
+                Input.Dial: ActionInputSupport.SUPPORTED,
+                Input.Touchscreen: ActionInputSupport.UNSUPPORTED
+            }
+        )
+        self.add_action_holder(self.nvidia_vram_graph_holder)
         
         # Combined graph showing GPU and VRAM usage
         self.nvidia_combined_graph_holder = ActionHolder(

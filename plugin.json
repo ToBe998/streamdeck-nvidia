@@ -12,9 +12,19 @@
             "description": "Display configurable GPU metrics as text labels"
         },
         {
+            "id": "NVIDIAGPUGraph",
+            "name": "NVIDIA GPU Usage Graph",
+            "description": "Display GPU usage as a single-line graph with NVIDIA logo"
+        },
+        {
+            "id": "NVIDIAVRAMGraph",
+            "name": "NVIDIA VRAM Usage Graph",
+            "description": "Display VRAM usage as a single-line graph with NVIDIA logo"
+        },
+        {
             "id": "NVIDIACombinedGraph",
             "name": "NVIDIA GPU + VRAM Graph",
-            "description": "Display GPU and VRAM usage as a dual-line graph"
+            "description": "Display GPU and VRAM usage as a dual-line graph with NVIDIA logo"
         }
     ],
     "requirements": {

@@ -14,8 +14,9 @@ from multiprocessing import Process, Queue
 # Use different backend to prevent errors with running plt in different threads
 matplotlib.use('agg')
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-from PIL import Image
+from PIL import Image, ImageEnhance
 import io
+import os
 
 # Import gtk
 import gi
@@ -34,6 +35,7 @@ class GraphBase(ActionBase):
 
         self.percentages_1: list[float] = []  # First line data
         self.percentages_2: list[float] = []  # Second line data (optional)
+        self.single_line_mode = False  # Set to True in subclasses for single-line graphs
 
         self.task_queue = Queue()
         self.result_queue = Queue()
@@ -43,7 +45,7 @@ class GraphBase(ActionBase):
         gl.signal_manager.connect_signal(Signals.AppQuit, self.stop_process)
 
     def stop_process(self, *args):
-        self.task_queue.put((None, None, None))
+        self.task_queue.put((None, None, None, None, None))
 
     def set_percentages_length(self, length: int):
         """Ensure data lists have the correct length"""
@@ -66,7 +68,11 @@ class GraphBase(ActionBase):
         time_period = settings.get("time-period", 15)
         self.set_percentages_length(time_period)
 
-        self.task_queue.put((settings, self.percentages_1, self.percentages_2))
+        # Get plugin directory for assets
+        plugin_dir = os.path.dirname(os.path.abspath(__file__))
+        
+        # Pass settings, data, single_line_mode, and plugin_dir
+        self.task_queue.put((settings, self.percentages_1, self.percentages_2, self.single_line_mode, plugin_dir))
 
         img = self.result_queue.get()
         return img
@@ -216,7 +222,7 @@ class GraphBase(ActionBase):
         self.show_graph()
 
     def on_removed_from_cache(self) -> None:
-        self.task_queue.put((None, None, None))
+        self.task_queue.put((None, None, None, None, None))
 
 
 class ColorRow(Adw.PreferencesRow):
@@ -248,14 +254,16 @@ class GraphCreator(Process):
 
     def run(self):
         while True:
-            settings, percentages_1, percentages_2 = self.task_queue.get()
-            if None in [settings, percentages_1, percentages_2]:
+            data = self.task_queue.get()
+            if None in data:
                 break
-            result = self.generate_graph(settings, percentages_1, percentages_2)
+            settings, percentages_1, percentages_2, single_line_mode, plugin_dir = data
+            result = self.generate_graph(settings, percentages_1, percentages_2, single_line_mode, plugin_dir)
             self.result_queue.put(result)
 
-    def generate_graph(self, settings: dict, percentages_1: list[float], percentages_2: list[float]):
-        """Generate a dual-line graph"""
+    def generate_graph(self, settings: dict, percentages_1: list[float], percentages_2: list[float], 
+                       single_line_mode: bool = False, plugin_dir: str = ""):
+        """Generate a graph with optional dual-line support and NVIDIA logo background"""
         # Get colors
         line1_color = self.conv_color_to_plt(settings.get("line1-color", [0, 255, 0, 255]))
         fill1_color = self.conv_color_to_plt(settings.get("fill1-color", [0, 255, 0, 100]))
@@ -278,7 +286,7 @@ class GraphCreator(Process):
         ax.set_axis_off()
         fig.add_axes(ax)
 
-        # Plot both lines
+        # Plot first line (or only line in single-line mode)
         if percentages_1:
             ax.plot(percentages_1, color=line1_color, linewidth=line_width)
             ax.fill_between(
@@ -288,7 +296,8 @@ class GraphCreator(Process):
                 alpha=fill1_color[3]
             )
 
-        if percentages_2:
+        # Plot second line only if not in single-line mode
+        if percentages_2 and not single_line_mode:
             ax.plot(percentages_2, color=line2_color, linewidth=line_width)
             ax.fill_between(
                 range(len(percentages_2)),
@@ -316,11 +325,43 @@ class GraphCreator(Process):
 
         # Convert buffer to a Pillow Image
         buf.seek(0)
-        img = Image.open(buf)
+        graph_img = Image.open(buf).copy()
+        buf.close()
 
         plt.close()  # Close the plot to free resources
 
-        return img
+        # Add NVIDIA logo background
+        try:
+            logo_path = os.path.join(plugin_dir, "nvidia_logo.png")
+            if os.path.exists(logo_path):
+                # Open and prepare background logo
+                logo = Image.open(logo_path).convert("RGBA")
+                
+                # Resize logo to fit the graph (slightly smaller)
+                target_size = int(graph_img.width * 0.6)
+                logo = logo.resize((target_size, target_size), Image.Resampling.LANCZOS)
+                
+                # Make logo very transparent (muted)
+                alpha = logo.split()[3]
+                alpha = ImageEnhance.Brightness(alpha).enhance(0.15)  # 15% opacity
+                logo.putalpha(alpha)
+                
+                # Create composite image
+                background = Image.new("RGBA", graph_img.size, (0, 0, 0, 0))
+                
+                # Center the logo
+                logo_x = (graph_img.width - logo.width) // 2
+                logo_y = (graph_img.height - logo.height) // 2
+                background.paste(logo, (logo_x, logo_y), logo)
+                
+                # Composite: background logo + graph on top
+                final_img = Image.alpha_composite(background, graph_img)
+                return final_img
+        except Exception as e:
+            # If logo loading fails, just return the graph
+            pass
+
+        return graph_img
 
     def conv_color_to_plt(self, color: list[int]) -> list[float]:
         """Convert RGB(A) 0-255 values to matplotlib 0-1 floats"""

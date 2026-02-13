@@ -36,29 +36,6 @@ Dual-line graph showing GPU usage and VRAM usage over time.
 - NVIDIA GPU with driver installed
 - Python 3.8 or higher
 
-### Install Plugin
-
-1. **Copy plugin to StreamController plugins directory:**
-   ```bash
-   cp -r /var/projects/streamdeck-nvidia ~/.var/app/com.core447.StreamController/data/plugins/com_streamcontroller_NVIDIAPlugin
-   ```
-
-2. **Install Python dependencies:**
-   ```bash
-   # If using Flatpak StreamController
-   flatpak run --command=pip com.core447.StreamController install nvidia-ml-py3 matplotlib Pillow
-   
-   # Or install in your Python environment
-   pip install -r requirements.txt
-   ```
-
-3. **Restart StreamController:**
-   ```bash
-   pkill -9 -f StreamController
-   sleep 3
-   flatpak run com.core447.StreamController
-   ```
-
 ## Usage
 
 ### Adding GPU Metrics Text Display

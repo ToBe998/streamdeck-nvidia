@@ -261,6 +261,8 @@ class GraphCreator(Process):
         super().__init__(daemon=True, name="GraphCreator")
         self.task_queue = task_queue
         self.result_queue = result_queue
+        self.logo_cache = None  # Cache for processed logo
+        self.logo_path_cache = None  # Track logo file path
 
     def run(self):
         while True:
@@ -342,49 +344,50 @@ class GraphCreator(Process):
 
         plt.close()  # Close the plot to free resources
 
-        # Ensure graph is in RGBA mode
+        # Ensure graph is in RGBA mode for compositing
         if graph_img.mode != "RGBA":
             graph_img = graph_img.convert("RGBA")
 
-        # Add NVIDIA logo watermark
+        # Add NVIDIA logo watermark (with caching for performance)
         try:
             logo_path = os.path.join(plugin_dir, "nvidia_logo.png")
             if os.path.exists(logo_path):
-                # Open and prepare logo overlay
-                logo = Image.open(logo_path).convert("RGBA")
+                # Check cache first to avoid reprocessing
+                if self.logo_cache is None or self.logo_path_cache != logo_path:
+                    # Load and process logo once
+                    logo_orig = Image.open(logo_path).convert("RGBA")
+                    
+                    # Resize logo to 100% of graph size
+                    target_size = graph_img.width
+                    logo = logo_orig.resize((target_size, target_size), Image.Resampling.LANCZOS)
+                    
+                    # Adjust opacity and brightness for watermark effect
+                    if logo.mode == 'RGBA':
+                        r, g, b, a = logo.split()
+                        # Brighten the green logo for visibility
+                        brightness = 1.8
+                        r = r.point(lambda x: min(255, int(x * brightness)))
+                        g = g.point(lambda x: min(255, int(x * brightness)))
+                        b = b.point(lambda x: min(255, int(x * brightness)))
+                        # Apply 40% opacity for watermark effect
+                        a = a.point(lambda x: int(x * 0.4))
+                        logo = Image.merge('RGBA', (r, g, b, a))
+                    
+                    # Cache the processed logo
+                    self.logo_cache = logo
+                    self.logo_path_cache = logo_path
+                else:
+                    # Use cached logo
+                    logo = self.logo_cache
                 
-                # Resize logo to fit the graph (slightly smaller)
-                target_size = int(graph_img.width * 0.6)
-                logo = logo.resize((target_size, target_size), Image.Resampling.LANCZOS)
-                
-                # Brighten and make logo transparent while preserving its shape
-                opacity = 0.40  # 40% opacity
-                brightness_boost = 2.5  # Brighten the logo colors
-                
-                if logo.mode == 'RGBA':
-                    r, g, b, a = logo.split()
-                    # Brighten RGB channels
-                    r = r.point(lambda x: min(255, int(x * brightness_boost)))
-                    g = g.point(lambda x: min(255, int(x * brightness_boost)))
-                    b = b.point(lambda x: min(255, int(x * brightness_boost)))
-                    # Multiply alpha channel by opacity factor
-                    a = a.point(lambda x: int(x * opacity))
-                    logo = Image.merge('RGBA', (r, g, b, a))
-                
-                # Create overlay layer for the logo
-                overlay = Image.new("RGBA", graph_img.size, (0, 0, 0, 0))
-                
-                # Center the logo
+                # Center the logo on the graph
                 logo_x = (graph_img.width - logo.width) // 2
                 logo_y = (graph_img.height - logo.height) // 2
-                overlay.paste(logo, (logo_x, logo_y), logo)
                 
-                # Composite: graph first, then logo on top
-                final_img = Image.alpha_composite(graph_img, overlay)
-                return final_img
-                return final_img
-        except Exception as e:
-            # If logo loading fails, just return the graph
+                # Composite logo over graph
+                graph_img.paste(logo, (logo_x, logo_y), logo)
+        except Exception:
+            # If logo fails, continue without it
             pass
 
         return graph_img

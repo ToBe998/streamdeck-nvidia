@@ -2,7 +2,8 @@
 Singleton monitor for NVIDIA GPU metrics using pynvml
 """
 
-import pynvml
+import os
+import ctypes
 from loguru import logger as log
 
 
@@ -12,10 +13,24 @@ class NVIDIAMonitor:
     def __init__(self):
         self.initialized = False
         self.handle = None
+        self.pynvml = None
+        
         try:
-            pynvml.nvmlInit()
+            # Load NVIDIA library from plugin directory for Flatpak compatibility
+            plugin_dir = os.path.dirname(os.path.abspath(__file__))
+            lib_path = os.path.join(plugin_dir, "libnvidia-ml.so.1")
+            
+            # Import pynvml
+            import pynvml
+            self.pynvml = pynvml
+            
+            # Set the library path for pynvml to use
+            if os.path.exists(lib_path):
+                self.pynvml.nvmlLib = ctypes.CDLL(lib_path)
+            
+            self.pynvml.nvmlInit()
             # Get first GPU (index 0)
-            self.handle = pynvml.nvmlDeviceGetHandleByIndex(0)
+            self.handle = self.pynvml.nvmlDeviceGetHandleByIndex(0)
             self.initialized = True
             log.info("NVIDIA GPU monitoring initialized successfully")
         except Exception as e:
@@ -27,7 +42,7 @@ class NVIDIAMonitor:
         if not self.initialized:
             return 0.0
         try:
-            utilization = pynvml.nvmlDeviceGetUtilizationRates(self.handle)
+            utilization = self.pynvml.nvmlDeviceGetUtilizationRates(self.handle)
             return float(utilization.gpu)
         except Exception as e:
             log.error(f"Failed to get GPU utilization: {e}")
@@ -38,7 +53,7 @@ class NVIDIAMonitor:
         if not self.initialized:
             return 0.0
         try:
-            mem_info = pynvml.nvmlDeviceGetMemoryInfo(self.handle)
+            mem_info = self.pynvml.nvmlDeviceGetMemoryInfo(self.handle)
             return (mem_info.used / mem_info.total) * 100
         except Exception as e:
             log.error(f"Failed to get VRAM usage: {e}")
@@ -49,7 +64,7 @@ class NVIDIAMonitor:
         if not self.initialized:
             return 0
         try:
-            mem_info = pynvml.nvmlDeviceGetMemoryInfo(self.handle)
+            mem_info = self.pynvml.nvmlDeviceGetMemoryInfo(self.handle)
             return int(mem_info.used / (1024 * 1024))
         except Exception as e:
             log.error(f"Failed to get VRAM used: {e}")
@@ -60,7 +75,7 @@ class NVIDIAMonitor:
         if not self.initialized:
             return 0
         try:
-            mem_info = pynvml.nvmlDeviceGetMemoryInfo(self.handle)
+            mem_info = self.pynvml.nvmlDeviceGetMemoryInfo(self.handle)
             return int(mem_info.total / (1024 * 1024))
         except Exception as e:
             log.error(f"Failed to get total VRAM: {e}")
@@ -71,7 +86,7 @@ class NVIDIAMonitor:
         if not self.initialized:
             return 0
         try:
-            temp = pynvml.nvmlDeviceGetTemperature(self.handle, pynvml.NVML_TEMPERATURE_GPU)
+            temp = self.pynvml.nvmlDeviceGetTemperature(self.handle, self.pynvml.NVML_TEMPERATURE_GPU)
             return int(temp)
         except Exception as e:
             log.error(f"Failed to get GPU temperature: {e}")
@@ -79,9 +94,9 @@ class NVIDIAMonitor:
     
     def __del__(self):
         """Cleanup on destruction"""
-        if self.initialized:
+        if self.initialized and self.pynvml:
             try:
-                pynvml.nvmlShutdown()
+                self.pynvml.nvmlShutdown()
             except:
                 pass
 

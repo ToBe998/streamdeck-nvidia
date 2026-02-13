@@ -346,7 +346,7 @@ class GraphCreator(Process):
         if graph_img.mode != "RGBA":
             graph_img = graph_img.convert("RGBA")
 
-        # Add NVIDIA logo background
+        # Add NVIDIA logo watermark
         try:
             logo_path = os.path.join(plugin_dir, "nvidia_logo.png")
             if os.path.exists(logo_path):
@@ -359,7 +359,7 @@ class GraphCreator(Process):
                 
                 # Make logo transparent for watermark effect
                 alpha = logo.split()[3]
-                alpha = ImageEnhance.Brightness(alpha).enhance(0.20)  # 20% opacity - subtle watermark
+                alpha = ImageEnhance.Brightness(alpha).enhance(0.50)  # 50% opacity - visible watermark
                 logo.putalpha(alpha)
                 
                 # Create overlay layer for the logo

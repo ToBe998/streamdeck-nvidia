@@ -350,28 +350,29 @@ class GraphCreator(Process):
         try:
             logo_path = os.path.join(plugin_dir, "nvidia_logo.png")
             if os.path.exists(logo_path):
-                # Open and prepare background logo
+                # Open and prepare logo overlay
                 logo = Image.open(logo_path).convert("RGBA")
                 
                 # Resize logo to fit the graph (slightly smaller)
                 target_size = int(graph_img.width * 0.6)
                 logo = logo.resize((target_size, target_size), Image.Resampling.LANCZOS)
                 
-                # Make logo transparent but visible (muted)
+                # Make logo transparent for watermark effect
                 alpha = logo.split()[3]
-                alpha = ImageEnhance.Brightness(alpha).enhance(0.30)  # 30% opacity - subtle but visible
+                alpha = ImageEnhance.Brightness(alpha).enhance(0.20)  # 20% opacity - subtle watermark
                 logo.putalpha(alpha)
                 
-                # Create composite image with logo behind the graph
-                background = Image.new("RGBA", graph_img.size, (0, 0, 0, 0))
+                # Create overlay layer for the logo
+                overlay = Image.new("RGBA", graph_img.size, (0, 0, 0, 0))
                 
                 # Center the logo
                 logo_x = (graph_img.width - logo.width) // 2
                 logo_y = (graph_img.height - logo.height) // 2
-                background.paste(logo, (logo_x, logo_y), logo)
+                overlay.paste(logo, (logo_x, logo_y), logo)
                 
-                # Composite: background logo + graph on top
-                final_img = Image.alpha_composite(background, graph_img)
+                # Composite: graph first, then logo on top
+                final_img = Image.alpha_composite(graph_img, overlay)
+                return final_img
                 return final_img
         except Exception as e:
             # If logo loading fails, just return the graph
